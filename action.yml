@@ -121,6 +121,49 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.output-dir }}/
 
+    - name: Upload images to preview branch
+      if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
+      id: upload
+      shell: bash
+      run: |
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        RUN_ID="${{ github.run_id }}"
+        BRANCH="pencil-preview-images"
+
+        # Create orphan branch if it doesn't exist
+        git fetch origin "$BRANCH" 2>/dev/null || true
+        if ! git rev-parse "origin/$BRANCH" >/dev/null 2>&1; then
+          git checkout --orphan "$BRANCH"
+          git rm -rf . 2>/dev/null || true
+          git commit --allow-empty -m "Initialize preview images branch"
+          git push origin "$BRANCH"
+          git checkout -
+        fi
+
+        # Copy images to a temp dir, commit to the branch
+        TMPDIR=$(mktemp -d)
+        find "$OUTPUT_DIR" -name '*.png' -exec cp --parents {} "$TMPDIR" \;
+
+        git worktree add /tmp/preview-branch "origin/$BRANCH" 2>/dev/null || {
+          git fetch origin "$BRANCH"
+          git worktree add /tmp/preview-branch "origin/$BRANCH"
+        }
+
+        # Clean old images for this run, copy new ones
+        rm -rf "/tmp/preview-branch/$RUN_ID"
+        cp -r "$TMPDIR/$OUTPUT_DIR" "/tmp/preview-branch/$RUN_ID"
+
+        cd /tmp/preview-branch
+        git add .
+        git commit -m "Preview images for run $RUN_ID" || true
+        git push origin "$BRANCH" || true
+        cd -
+
+        git worktree remove /tmp/preview-branch 2>/dev/null || true
+
+        # Build base URL
+        echo "base_url=https://raw.githubusercontent.com/${{ github.repository }}/$BRANCH/$RUN_ID" >> "$GITHUB_OUTPUT"
+
     - name: Post PR comment
       if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
       uses: actions/github-script@v7
@@ -129,6 +172,7 @@ runs:
           const fs = require('fs');
           const path = require('path');
           const outputDir = '${{ inputs.output-dir }}';
+          const baseUrl = '${{ steps.upload.outputs.base_url }}';
 
           let body = '# 🎨 Pencil Design Preview\n\n';
 
@@ -138,7 +182,17 @@ runs:
           for (const dir of dirs) {
             const reportPath = path.join(outputDir, dir.name, 'report.md');
             if (fs.existsSync(reportPath)) {
-              body += fs.readFileSync(reportPath, 'utf-8') + '\n\n---\n\n';
+              let report = fs.readFileSync(reportPath, 'utf-8');
+              // Replace local paths with raw.githubusercontent URLs
+              report = report.replace(
+                /!\[([^\]]*)\]\(([^)]+\.png)\)/g,
+                (match, alt, localPath) => {
+                  const filename = path.basename(localPath);
+                  const url = `${baseUrl}/${dir.name}/${filename}`;
+                  return `![${alt}](${url})`;
+                }
+              );
+              body += report + '\n\n---\n\n';
             }
           }
 

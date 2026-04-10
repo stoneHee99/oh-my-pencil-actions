@@ -55,7 +55,7 @@ on:
       - "**/*.pen"
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
