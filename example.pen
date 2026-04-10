@@ -166,7 +166,8 @@
                   "fill": "$text-muted",
                   "content": "Search",
                   "fontFamily": "Inter",
-                  "fontSize": 15
+                  "fontSize": 15,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -278,7 +279,8 @@
                           "fill": "$text-muted",
                           "content": "2:34 PM",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -297,7 +299,8 @@
                           "fill": "$text-secondary",
                           "content": "Hey! Are we still on for dinner tonight?",
                           "fontFamily": "Inter",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -416,7 +419,8 @@
                           "fill": "$text-muted",
                           "content": "1:15 PM",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -435,7 +439,8 @@
                           "fill": "$text-secondary",
                           "content": "Check out the new design mockups I sent",
                           "fontFamily": "Inter",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -569,7 +574,8 @@
                           "fill": "$text-muted",
                           "content": "11:42 AM",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -580,7 +586,8 @@
                       "fill": "$text-secondary",
                       "content": "Don't forget to call grandma this weekend!",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -671,7 +678,8 @@
                           "fill": "$text-muted",
                           "content": "10:08 AM",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -690,7 +698,8 @@
                           "fill": "$text-secondary",
                           "content": "Jake: Let's finalize the color palette today",
                           "fontFamily": "Inter",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -809,7 +818,8 @@
                           "fill": "$text-muted",
                           "content": "Yesterday",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -820,7 +830,8 @@
                       "fill": "$text-secondary",
                       "content": "Thanks for the help with the presentation!",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -926,7 +937,8 @@
                           "fill": "$text-muted",
                           "content": "Yesterday",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -937,7 +949,8 @@
                       "fill": "$text-secondary",
                       "content": "The concert was amazing! We should go again",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -1028,7 +1041,8 @@
                           "fill": "$text-muted",
                           "content": "Monday",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1039,7 +1053,8 @@
                       "fill": "$text-secondary",
                       "content": "Meeting moved to 3 PM in Conference Room B",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -2572,7 +2587,7 @@
               "id": "m2KFu",
               "name": "Tab Pill",
               "width": "fill_container",
-              "height": "fill_container",
+              "height": 62,
               "fill": "$bg-primary",
               "cornerRadius": 36,
               "stroke": {
