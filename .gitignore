@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.pencil-preview/
+screenshots/
+*.png
+!images/*.png
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env
+.env
+.env.local
+
+# Test artifacts
+/tmp/
+
+# Test pen files
+untitled.pen
+
+# Claude
+.claude/
