@@ -47,12 +47,18 @@ runs:
       with:
         node-version: "20"
 
+    - name: Install action dependencies
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}"
+        npm ci --ignore-scripts
+
     - name: Get Playwright version
       id: pw-version
       shell: bash
       run: |
         cd "${{ github.action_path }}"
-        echo "version=$(node -p "require('./node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT" 2>/dev/null || echo "version=unknown" >> "$GITHUB_OUTPUT"
+        echo "version=$(node -p "require('./node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
     - name: Cache Playwright browsers
       id: cache-pw
@@ -60,12 +66,6 @@ runs:
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ steps.pw-version.outputs.version }}
-
-    - name: Install action dependencies
-      shell: bash
-      run: |
-        cd "${{ github.action_path }}"
-        npm ci --ignore-scripts
 
     - name: Install Playwright Chromium
       shell: bash
@@ -139,6 +139,34 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.output-dir }}/
 
+    - name: Commit screenshots to PR branch
+      if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
+      id: upload
+      shell: bash
+      run: |
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        RUN_ID="${{ github.run_id }}"
+        IMG_DIR=".pencil-preview/${RUN_ID}"
+
+        mkdir -p "$IMG_DIR"
+
+        # Copy all PNGs into the image directory
+        find "$OUTPUT_DIR" -name '*.png' | while read -r png; do
+          SUBDIR=$(basename "$(dirname "$png")")
+          mkdir -p "$IMG_DIR/$SUBDIR"
+          cp "$png" "$IMG_DIR/$SUBDIR/"
+        done
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$IMG_DIR"
+        git commit -m "chore(preview): upload screenshots for run ${RUN_ID}" || true
+        git push || true
+
+        REPO="${{ github.repository }}"
+        BRANCH="${{ github.head_ref }}"
+        echo "base_url=https://raw.githubusercontent.com/${REPO}/${BRANCH}/${IMG_DIR}" >> "$GITHUB_OUTPUT"
+
     - name: Post PR comment
       if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
       uses: actions/github-script@v7
@@ -147,55 +175,24 @@ runs:
           const fs = require('fs');
           const path = require('path');
           const outputDir = '${{ inputs.output-dir }}';
-          const imageUrls = new Map();
+          const baseUrl = '${{ steps.upload.outputs.base_url }}';
 
-          // Upload all PNG files via GitHub API (repo contents)
-          const branch = '${{ github.head_ref }}';
-          const runId = '${{ github.run_id }}';
+          let body = '# 🎨 Pencil Design Preview\n\n';
+
           const dirs = fs.readdirSync(outputDir, { withFileTypes: true })
             .filter(d => d.isDirectory());
-
-          for (const dir of dirs) {
-            const dirPath = path.join(outputDir, dir.name);
-            const pngs = fs.readdirSync(dirPath).filter(f => f.endsWith('.png'));
-
-            for (const png of pngs) {
-              const filePath = path.join(dirPath, png);
-              const content = fs.readFileSync(filePath).toString('base64');
-              const ghPath = `.pencil-preview/${runId}/${dir.name}/${png}`;
-
-              try {
-                await github.rest.repos.createOrUpdateFileContents({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  path: ghPath,
-                  message: `chore(preview): upload ${png}`,
-                  content,
-                  branch,
-                });
-                const url = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${branch}/${ghPath}`;
-                imageUrls.set(filePath, url);
-                console.log(`Uploaded: ${ghPath}`);
-              } catch (e) {
-                console.log(`Failed to upload ${ghPath}: ${e.message}`);
-              }
-            }
-          }
-
-          // Build report with uploaded image URLs
-          let body = '# 🎨 Pencil Design Preview\n\n';
 
           for (const dir of dirs) {
             const reportPath = path.join(outputDir, dir.name, 'report.md');
             if (fs.existsSync(reportPath)) {
               let report = fs.readFileSync(reportPath, 'utf-8');
-              // Replace local paths with GitHub raw URLs
+              // Replace local paths with raw.githubusercontent URLs
               report = report.replace(
                 /!\[([^\]]*)\]\(([^)]+\.png)\)/g,
                 (match, alt, localPath) => {
-                  const url = imageUrls.get(localPath);
-                  if (url) return `![${alt}](${url})`;
-                  return match;
+                  const filename = path.basename(localPath);
+                  const url = `${baseUrl}/${dir.name}/${filename}`;
+                  return `![${alt}](${url})`;
                 }
               );
               body += report + '\n\n---\n\n';
