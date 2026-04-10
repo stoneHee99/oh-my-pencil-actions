@@ -1,0 +1,173 @@
+name: "Oh My Pencil Actions"
+description: "Visual diff for Pencil (.pen) design files — auto-generate before/after screenshots and post PR comments on design changes"
+author: "stoneHee99"
+
+branding:
+  icon: "eye"
+  color: "purple"
+
+inputs:
+  pen-paths:
+    description: "Glob pattern for .pen files to watch (default: **/*.pen)"
+    required: false
+    default: "**/*.pen"
+  output-dir:
+    description: "Directory to save screenshots (default: .pencil-preview)"
+    required: false
+    default: ".pencil-preview"
+  comment:
+    description: "Post a PR comment with the visual diff report (default: true)"
+    required: false
+    default: "true"
+  artifact:
+    description: "Upload screenshots as workflow artifact (default: true)"
+    required: false
+    default: "true"
+  artifact-name:
+    description: "Name of the uploaded artifact (default: pencil-design-preview)"
+    required: false
+    default: "pencil-design-preview"
+
+outputs:
+  has-changes:
+    description: "Whether any .pen file changes were detected"
+    value: ${{ steps.detect.outputs.has_changes }}
+  report:
+    description: "Path to the generated markdown report"
+    value: ${{ steps.generate.outputs.report_path }}
+  changed-files:
+    description: "List of changed .pen files"
+    value: ${{ steps.detect.outputs.files }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install action dependencies
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}"
+        npm ci --ignore-scripts
+
+    - name: Install Playwright Chromium
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}"
+        npx playwright install chromium --with-deps
+
+    - name: Build action
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}"
+        npm run build
+
+    - name: Detect changed .pen files
+      id: detect
+      shell: bash
+      run: |
+        BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+        CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$HEAD_SHA" -- '${{ inputs.pen-paths }}' || true)
+
+        if [ -z "$CHANGED_FILES" ]; then
+          echo "No .pen files changed"
+          echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "Changed .pen files:"
+        echo "$CHANGED_FILES"
+        echo "has_changes=true" >> "$GITHUB_OUTPUT"
+        echo "files<<EOF" >> "$GITHUB_OUTPUT"
+        echo "$CHANGED_FILES" >> "$GITHUB_OUTPUT"
+        echo "EOF" >> "$GITHUB_OUTPUT"
+
+    - name: Generate visual diffs
+      id: generate
+      if: steps.detect.outputs.has_changes == 'true'
+      shell: bash
+      run: |
+        BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        ACTION_PATH="${{ github.action_path }}"
+
+        mkdir -p "$OUTPUT_DIR"
+
+        while IFS= read -r pen_file; do
+          [ -z "$pen_file" ] && continue
+          echo "Processing: $pen_file"
+
+          # Extract base version of the file
+          mkdir -p /tmp/pen-base
+          BASE_FILE="/tmp/pen-base/$(basename "$pen_file")"
+          git show "$BASE_SHA:$pen_file" > "$BASE_FILE" 2>/dev/null || echo '{"version":"0","children":[]}' > "$BASE_FILE"
+
+          # Generate before/after screenshots
+          SUBDIR="$OUTPUT_DIR/$(basename "$pen_file" .pen)"
+          node "$ACTION_PATH/dist/main.js" "$BASE_FILE" "$pen_file" --output-dir "$SUBDIR"
+        done <<< "${{ steps.detect.outputs.files }}"
+
+        echo "report_path=$OUTPUT_DIR" >> "$GITHUB_OUTPUT"
+
+    - name: Upload artifact
+      if: steps.detect.outputs.has_changes == 'true' && inputs.artifact == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.output-dir }}/
+
+    - name: Post PR comment
+      if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          const outputDir = '${{ inputs.output-dir }}';
+
+          let body = '# 🎨 Pencil Design Preview\n\n';
+
+          const dirs = fs.readdirSync(outputDir, { withFileTypes: true })
+            .filter(d => d.isDirectory());
+
+          for (const dir of dirs) {
+            const reportPath = path.join(outputDir, dir.name, 'report.md');
+            if (fs.existsSync(reportPath)) {
+              body += fs.readFileSync(reportPath, 'utf-8') + '\n\n---\n\n';
+            }
+          }
+
+          body += '\n> 📸 Full screenshots available in [Actions artifacts](' +
+            `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})` +
+            '\n\n> Generated by [**oh-my-pencil-actions**](https://github.com/stoneHee99/oh-my-pencil-actions)';
+
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          const existing = comments.find(c =>
+            c.user?.type === 'Bot' && c.body?.includes('Pencil Design Preview')
+          );
+
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+          }

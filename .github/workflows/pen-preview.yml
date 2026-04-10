@@ -1,0 +1,23 @@
+# Example workflow — copy this to your own repo at .github/workflows/pen-preview.yml
+name: Pencil Design Preview
+
+on:
+  pull_request:
+    paths:
+      - "**/*.pen"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  design-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Pencil Preview
+        uses: stoneHee99/oh-my-pencil-actions@v1

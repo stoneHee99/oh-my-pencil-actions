@@ -1,0 +1,40 @@
+{
+  "name": "oh-my-pencil-actions",
+  "version": "1.0.0",
+  "description": "GitHub Action for visual diff of Pencil (.pen) design files — auto-generate before/after screenshots on PRs",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "preview": "tsc && node dist/main.js"
+  },
+  "keywords": [
+    "pencil",
+    "design",
+    "visual-diff",
+    "github-action",
+    "screenshot",
+    "design-review",
+    "pen-file",
+    "before-after",
+    "ui-review",
+    "design-tool",
+    "figma-alternative",
+    "visual-regression"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stoneHee99/oh-my-pencil-actions.git"
+  },
+  "homepage": "https://github.com/stoneHee99/oh-my-pencil-actions#readme",
+  "bugs": {
+    "url": "https://github.com/stoneHee99/oh-my-pencil-actions/issues"
+  },
+  "license": "MIT",
+  "author": "stoneHee99",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "playwright": "^1.59.1",
+    "typescript": "^6.0.2"
+  }
+}
