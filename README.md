@@ -62,10 +62,9 @@ jobs:
   design-preview:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Run Pencil Preview
@@ -199,15 +198,15 @@ No additional setup or API keys required.
 
 ### Where are the screenshot images stored?
 
-Screenshots are uploaded to a `pencil-preview-images` orphan branch **in your own repository** — not in this action's repo. The action uses `${{ github.repository }}` context, so all images stay within the repo that runs the workflow. Each run's images are namespaced by run ID to avoid conflicts.
+Screenshots are uploaded as **draft release assets** in your own repository — not in this action's repo. Each workflow run creates a temporary draft release tagged `preview-{run_id}` to host the images. This keeps your branches and source code completely clean.
 
 ### Does this action modify my source code or PR branch?
 
-No. Screenshots are stored on a separate orphan branch (`pencil-preview-images`) that has no relation to your main or PR branches. Your source code is never modified.
+No. Screenshots are never committed to any branch. They are stored as release assets which don't affect your git history or source code.
 
 ### What permissions does this action need?
 
-- `contents: write` — to push screenshot images to the orphan branch
+- `contents: write` — to create draft releases and upload screenshot assets
 - `pull-requests: write` — to post the visual diff comment on the PR
 
 ---
