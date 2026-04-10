@@ -150,7 +150,7 @@ function getNodeDirection(node: PenNode): ParentDir {
   if (node.layout === "vertical" || node.layout === "column") return "column";
   if (node.layout === "horizontal" || node.layout === "row") return "row";
   // implicit layout detection
-  if (node.type === "frame" && !node.layout) {
+  if (node.type === "frame" && (!node.layout || node.layout === "none")) {
     const childrenUsesFill = (node.children ?? []).some(
       (c) => c.width === "fill_container" || c.height === "fill_container"
     );
@@ -166,8 +166,8 @@ function getNodeDirection(node: PenNode): ParentDir {
 function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoot: boolean, parentDir: ParentDir = "none"): string {
   const s: string[] = [];
 
-  // Position: root-level children use absolute, layout children use flex
-  if (isRoot && (node.x !== undefined || node.y !== undefined)) {
+  // Position: children in non-layout parents use absolute positioning
+  if (parentDir === "none" && (node.x !== undefined || node.y !== undefined)) {
     s.push("position: absolute");
     if (node.x !== undefined) s.push(`left: ${node.x}px`);
     if (node.y !== undefined) s.push(`top: ${node.y}px`);
@@ -210,6 +210,9 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
   if (dir !== "none") {
     s.push("display: flex");
     s.push(`flex-direction: ${dir}`);
+  } else if ((node.type === "frame" || node.type === "ellipse") && (node.children ?? []).length > 0) {
+    // Non-layout container with children → position: relative for absolute children
+    s.push("position: relative");
   }
 
   if (node.gap !== undefined) s.push(`gap: ${node.gap}px`);
@@ -220,7 +223,9 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
       center: "center",
       end: "flex-end",
       "space-between": "space-between",
+      "space_between": "space-between",
       "space-around": "space-around",
+      "space_around": "space-around",
     };
     s.push(`justify-content: ${jcMap[node.justifyContent] ?? node.justifyContent}`);
   }
