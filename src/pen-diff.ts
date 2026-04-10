@@ -3,7 +3,7 @@
  * 두 .pen 파일을 비교하여 추가/삭제/변경된 노드를 식별
  */
 
-import type { PenDocument, PenNode } from "./pen-to-html.js";
+import type { PenDocument, PenNode, PenVariable } from "./pen-to-html.js";
 
 export interface DiffResult {
   added: PenNode[];     // PR에서 새로 추가된 노드
@@ -152,6 +152,76 @@ export function getTopLevelNodes(
   return result;
 }
 
+// ── Variable Diff ──
+
+/** Properties that can reference variables (start with $) */
+const VARIABLE_PROPS = ["fill", "stroke", "width", "height"] as const;
+
+function serializeVariable(v: unknown): string {
+  if (v === undefined || v === null) return "";
+  return JSON.stringify(v);
+}
+
+/**
+ * Find variables that changed between base and head documents.
+ * Returns a Set of variable names (e.g., "--accent", "bg-primary").
+ */
+function getChangedVariables(
+  baseVars: Record<string, PenVariable> | undefined,
+  headVars: Record<string, PenVariable> | undefined
+): Set<string> {
+  const changed = new Set<string>();
+  const bv = baseVars ?? {};
+  const hv = headVars ?? {};
+
+  // Check modified and removed variables
+  for (const name of Object.keys(bv)) {
+    if (serializeVariable(bv[name]) !== serializeVariable(hv[name])) {
+      changed.add(name);
+    }
+  }
+  // Check added variables
+  for (const name of Object.keys(hv)) {
+    if (!(name in bv)) {
+      changed.add(name);
+    }
+  }
+
+  return changed;
+}
+
+/**
+ * Check if a node references any of the changed variables.
+ * Variable references start with "$" (e.g., "$bg-primary", "$--accent").
+ */
+function nodeReferencesVariables(node: PenNode, changedVars: Set<string>): string[] {
+  const affectedProps: string[] = [];
+
+  for (const prop of VARIABLE_PROPS) {
+    const value = (node as unknown as Record<string, unknown>)[prop];
+    if (typeof value === "string" && value.startsWith("$")) {
+      const varName = value.slice(1); // "$bg-primary" → "bg-primary"
+      if (changedVars.has(varName)) {
+        affectedProps.push(`${prop} (variable)`);
+      }
+    }
+    // Also check nested objects (e.g., stroke.fill)
+    if (typeof value === "object" && value !== null) {
+      const obj = value as Record<string, unknown>;
+      for (const [key, subVal] of Object.entries(obj)) {
+        if (typeof subVal === "string" && subVal.startsWith("$")) {
+          const varName = subVal.slice(1);
+          if (changedVars.has(varName)) {
+            affectedProps.push(`${prop}.${key} (variable)`);
+          }
+        }
+      }
+    }
+  }
+
+  return affectedProps;
+}
+
 // ── Main Diff ──
 
 export function diffPen(base: PenDocument, head: PenDocument): DiffResult {
@@ -161,6 +231,13 @@ export function diffPen(base: PenDocument, head: PenDocument): DiffResult {
   const added: PenNode[] = [];
   const removed: PenNode[] = [];
   const modified: ModifiedNode[] = [];
+  const modifiedIds = new Set<string>();
+
+  // Detect changed variables
+  const changedVars = getChangedVariables(base.variables, head.variables);
+  if (changedVars.size > 0) {
+    console.log(`Changed variables: ${[...changedVars].join(", ")}`);
+  }
 
   // Find added & modified
   for (const [id, headNode] of headIndex) {
@@ -178,6 +255,25 @@ export function diffPen(base: PenDocument, head: PenDocument): DiffResult {
         after: headNode,
         changes,
       });
+      modifiedIds.add(id);
+    }
+  }
+
+  // Find nodes affected by variable changes (not already in modified)
+  if (changedVars.size > 0) {
+    for (const [id, headNode] of headIndex) {
+      if (modifiedIds.has(id)) continue;
+      const affectedProps = nodeReferencesVariables(headNode, changedVars);
+      if (affectedProps.length > 0) {
+        const baseNode = baseIndex.get(id);
+        modified.push({
+          id,
+          name: headNode.name ?? id,
+          before: baseNode ?? headNode,
+          after: headNode,
+          changes: affectedProps,
+        });
+      }
     }
   }
 

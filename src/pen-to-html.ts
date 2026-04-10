@@ -53,7 +53,7 @@ export interface PenNode {
   iconFontFamily?: string;
 }
 
-interface PenVariable {
+export interface PenVariable {
   type: string;
   value: string | number | PenVariableValue[];
 }
