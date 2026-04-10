@@ -45,6 +45,7 @@ const VISUAL_PROPS = [
   "layout", "gap", "padding", "justifyContent", "alignItems",
   "enabled", "rotation", "flipX", "flipY", "clip",
   "textAlign", "letterSpacing",
+  "iconFontName", "iconFontFamily",
 ] as const;
 
 function serializeProp(value: unknown): string {

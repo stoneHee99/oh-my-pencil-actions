@@ -48,6 +48,9 @@ export interface PenNode {
   reusable?: boolean;
   ref?: string;
   descendants?: Record<string, Partial<PenNode>>;
+  // Icon font
+  iconFontName?: string;
+  iconFontFamily?: string;
 }
 
 interface PenVariable {
@@ -359,6 +362,16 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
     }
   }
 
+  // Icon font — apply fill as color
+  if (node.type === "icon_font") {
+    const iconColor = resolveColor(node.fill, variables);
+    if (iconColor) {
+      const bgIdx = s.findIndex((x) => x.startsWith("background-color:"));
+      if (bgIdx >= 0) s.splice(bgIdx, 1);
+      s.push(`color: ${iconColor}`);
+    }
+  }
+
   return s.join("; ");
 }
 
@@ -381,6 +394,25 @@ function renderNode(node: PenNode, variables: Record<string, PenVariable>, isRoo
   if (node.type === "text") {
     const content = escapeHtml(node.content ?? "");
     return `<span ${dataAttrs} style="${style}">${content}</span>`;
+  }
+
+  // Icon font → render as Lucide/icon font character
+  if (node.type === "icon_font" && node.iconFontName) {
+    return `<i ${dataAttrs} data-lucide="${node.iconFontName}" style="${style}"></i>`;
+  }
+
+  // Ellipse → div with border-radius: 50%
+  if (node.type === "ellipse") {
+    const ellipseStyle = style + (style ? "; " : "") + "border-radius: 50%";
+    const childrenHtml = (node.children ?? [])
+      .map((child) => renderNode(child, variables, false, "none"))
+      .join("\n");
+    return `<div ${dataAttrs} style="${ellipseStyle}">${childrenHtml}</div>`;
+  }
+
+  // Rectangle → div (same as frame but without layout)
+  if (node.type === "rectangle") {
+    return `<div ${dataAttrs} style="${style}"></div>`;
   }
 
   // 이 노드의 layout 방향 → 자식에게 전달
@@ -424,10 +456,12 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
     .map((child) => renderNode(child, variables, true))
     .join("\n");
 
-  // Collect all font families used in the document
+  // Collect all font families and icon font families
   const fonts = new Set<string>();
+  const iconFontFamilies = new Set<string>();
   function collectFonts(node: PenNode) {
     if (node.fontFamily) fonts.add(node.fontFamily);
+    if (node.iconFontFamily) iconFontFamilies.add(node.iconFontFamily);
     for (const child of node.children ?? []) collectFonts(child);
   }
   doc.children.forEach(collectFonts);
@@ -454,11 +488,26 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
     pageHeight = Math.max(pageHeight, cy + ch);
   }
 
+  // Icon font libraries
+  const iconScripts: string[] = [];
+  if (iconFontFamilies.has("lucide")) {
+    iconScripts.push(
+      `<script src="https://unpkg.com/lucide@latest"></script>`,
+      `<script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>`
+    );
+  }
+  if (iconFontFamilies.has("material") || iconFontFamilies.has("material-icons")) {
+    iconScripts.push(
+      `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
+    );
+  }
+
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 ${googleFontsLink}
+${iconScripts.join("\n")}
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -468,6 +517,11 @@ ${googleFontsLink}
     min-height: ${pageHeight + 100}px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  [data-lucide] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
 ${highlightCss}
