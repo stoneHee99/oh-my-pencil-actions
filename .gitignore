@@ -24,6 +24,7 @@ Thumbs.db
 
 # Test pen files
 untitled.pen
+!/example.pen
 
 # Claude
 .claude/

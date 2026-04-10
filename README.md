@@ -1,6 +1,6 @@
 # Oh My Pencil Actions
 
-**Visual diff for [Pencil](https://pencil.li) design files in GitHub Pull Requests.**
+**Visual diff for [Pencil](https://pencil.dev) design files in GitHub Pull Requests.**
 
 Automatically detect changes in `.pen` files, render before/after screenshots, and post a visual comparison directly in your PR comments — so your team can review design changes at a glance.
 
@@ -187,7 +187,7 @@ Screenshots are taken at two levels:
 
 ## Requirements
 
-- **Pencil** (https://pencil.li) — AI-native design tool that produces `.pen` files
+- **Pencil** (https://pencil.dev) — AI-native design tool that produces `.pen` files
 - Your repository must contain `.pen` files committed to version control
 
 No additional setup or API keys required.
@@ -235,7 +235,7 @@ Please open an issue first to discuss what you'd like to change.
 
 ## Related
 
-- [Pencil](https://pencil.li) — AI-native design tool
+- [Pencil](https://pencil.dev) — AI-native design tool
 - [open-pencil](https://github.com/open-pencil/open-pencil) — Open-source Pencil renderer (reference implementation)
 
 ---
