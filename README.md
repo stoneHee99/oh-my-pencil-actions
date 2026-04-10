@@ -194,6 +194,23 @@ No additional setup or API keys required.
 
 ---
 
+## FAQ
+
+### Where are the screenshot images stored?
+
+Screenshots are uploaded to a `pencil-preview-images` orphan branch **in your own repository** — not in this action's repo. The action uses `${{ github.repository }}` context, so all images stay within the repo that runs the workflow. Each run's images are namespaced by run ID to avoid conflicts.
+
+### Does this action modify my source code or PR branch?
+
+No. Screenshots are stored on a separate orphan branch (`pencil-preview-images`) that has no relation to your main or PR branches. Your source code is never modified.
+
+### What permissions does this action need?
+
+- `contents: write` — to push screenshot images to the orphan branch
+- `pull-requests: write` — to post the visual diff comment on the PR
+
+---
+
 ## Local Development
 
 ```bash
