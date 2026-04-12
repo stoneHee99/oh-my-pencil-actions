@@ -150,6 +150,10 @@ runs:
         RUN_ID="${{ github.run_id }}"
         TAG="preview-${RUN_ID}"
 
+        # Delete existing release with same tag if any
+        gh release delete "$TAG" --repo "${{ github.repository }}" --yes 2>/dev/null || true
+        git push origin ":refs/tags/$TAG" 2>/dev/null || true
+
         # Create prerelease for hosting images (not draft — draft assets are not publicly accessible)
         gh release create "$TAG" \
           --repo "${{ github.repository }}" \
@@ -161,12 +165,16 @@ runs:
         URL_MAP="/tmp/image-urls.txt"
         > "$URL_MAP"
 
+        TMPDIR=$(mktemp -d)
         find "$OUTPUT_DIR" -name '*.png' | while read -r png; do
           BASENAME=$(basename "$png")
           SUBDIR=$(basename "$(dirname "$png")")
           ASSET_NAME="${SUBDIR}--${BASENAME}"
 
-          gh release upload "$TAG" "$png#${ASSET_NAME}" \
+          # Copy with renamed filename (gh uploads use the actual filename)
+          cp "$png" "$TMPDIR/$ASSET_NAME"
+
+          gh release upload "$TAG" "$TMPDIR/$ASSET_NAME" \
             --repo "${{ github.repository }}" \
             --clobber
 
