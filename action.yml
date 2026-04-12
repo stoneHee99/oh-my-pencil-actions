@@ -149,38 +149,26 @@ runs:
         OUTPUT_DIR="${{ inputs.output-dir }}"
         RUN_ID="${{ github.run_id }}"
         TAG="preview-${RUN_ID}"
-
-        # Delete existing release with same tag if any
-        gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
-
-        # Create prerelease for hosting images (not draft — draft assets are not publicly accessible)
-        gh release create "$TAG" \
-          --repo "${{ github.repository }}" \
-          --title "Preview: run ${RUN_ID}" \
-          --notes "Auto-generated screenshots for PR #${{ github.event.pull_request.number }}. Safe to delete." \
-          --prerelease
-
-        # Upload all PNGs and build URL map file
+        TMPDIR=$(mktemp -d)
         URL_MAP="/tmp/image-urls.txt"
         > "$URL_MAP"
 
-        TMPDIR=$(mktemp -d)
+        # Rename all PNGs and build URL map
         find "$OUTPUT_DIR" -name '*.png' | while read -r png; do
           BASENAME=$(basename "$png")
           SUBDIR=$(basename "$(dirname "$png")")
           ASSET_NAME="${SUBDIR}--${BASENAME}"
-
-          # Copy with renamed filename (gh uploads use the actual filename)
           cp "$png" "$TMPDIR/$ASSET_NAME"
-
-          gh release upload "$TAG" "$TMPDIR/$ASSET_NAME" \
-            --repo "${{ github.repository }}" \
-            --clobber
-
-          # Build download URL
           URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ASSET_NAME}"
           echo "${png}=${URL}" >> "$URL_MAP"
         done
+
+        # Create release with all files in one call
+        gh release create "$TAG" "$TMPDIR"/*.png \
+          --repo "${{ github.repository }}" \
+          --title "Preview: run ${RUN_ID}" \
+          --notes "Auto-generated screenshots for PR #${{ github.event.pull_request.number }}. Safe to delete." \
+          --prerelease
 
         echo "url_map=${URL_MAP}" >> "$GITHUB_OUTPUT"
         echo "release_tag=${TAG}" >> "$GITHUB_OUTPUT"
