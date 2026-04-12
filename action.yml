@@ -139,7 +139,7 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.output-dir }}/
 
-    - name: Upload screenshots to draft release
+    - name: Upload screenshots to release
       if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
       id: upload
       shell: bash
@@ -150,12 +150,12 @@ runs:
         RUN_ID="${{ github.run_id }}"
         TAG="preview-${RUN_ID}"
 
-        # Create draft release for hosting images
+        # Create prerelease for hosting images (not draft — draft assets are not publicly accessible)
         gh release create "$TAG" \
           --repo "${{ github.repository }}" \
           --title "Preview: run ${RUN_ID}" \
-          --notes "Auto-generated screenshots for PR #${{ github.event.pull_request.number }}" \
-          --draft --prerelease
+          --notes "Auto-generated screenshots for PR #${{ github.event.pull_request.number }}. Safe to delete." \
+          --prerelease
 
         # Upload all PNGs and build URL map file
         URL_MAP="/tmp/image-urls.txt"
