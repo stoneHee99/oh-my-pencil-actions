@@ -151,8 +151,7 @@ runs:
         TAG="preview-${RUN_ID}"
 
         # Delete existing release with same tag if any
-        gh release delete "$TAG" --repo "${{ github.repository }}" --yes 2>/dev/null || true
-        git push origin ":refs/tags/$TAG" 2>/dev/null || true
+        gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
 
         # Create prerelease for hosting images (not draft — draft assets are not publicly accessible)
         gh release create "$TAG" \
