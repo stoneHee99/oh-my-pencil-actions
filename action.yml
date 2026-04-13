@@ -160,6 +160,9 @@ runs:
         URL_MAP="/tmp/image-urls.txt"
         > "$URL_MAP"
 
+        # Delete existing release with same tag (e.g. from rerun)
+        gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+
         echo "Looking for overview-images.txt in $OUTPUT_DIR..."
         ls -la "$OUTPUT_DIR"/ || true
 
