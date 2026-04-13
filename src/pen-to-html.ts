@@ -350,7 +350,15 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
     }
     if (node.letterSpacing) s.push(`letter-spacing: ${node.letterSpacing}px`);
     if (node.textAlign) s.push(`text-align: ${node.textAlign}`);
-    s.push("white-space: nowrap");
+    // Text wrapping
+    const hasNewlines = (node.content ?? "").includes("\n");
+    if (node.textGrowth === "fixed-width" || node.width === "fill_container") {
+      s.push("flex: 1", "min-width: 0", hasNewlines ? "white-space: pre-wrap" : "white-space: normal");
+    } else if (hasNewlines) {
+      s.push("white-space: pre-wrap");
+    } else {
+      s.push("white-space: nowrap");
+    }
 
     // Text color from fill
     const textColor = resolveColor(node.fill, variables);
@@ -359,11 +367,6 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
       const bgIdx = s.findIndex((x) => x.startsWith("background-color:"));
       if (bgIdx >= 0) s.splice(bgIdx, 1);
       s.push(`color: ${textColor}`);
-    }
-
-    // Text with fill_container width → allow wrapping
-    if (node.textGrowth === "fixed-width" || node.width === "fill_container") {
-      s.push("flex: 1", "min-width: 0", "white-space: normal");
     }
   }
 
