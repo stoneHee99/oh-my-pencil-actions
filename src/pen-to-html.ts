@@ -336,7 +336,8 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
   // Text properties
   if (node.type === "text") {
     if (node.fontSize) s.push(`font-size: ${node.fontSize}px`);
-    if (node.fontFamily) s.push(`font-family: '${node.fontFamily}', 'Inter', 'Noto Sans KR', 'Noto Sans SC', 'Noto Sans JP', sans-serif`);
+    // Fallback chain matching open-pencil: primary → Inter → Arabic → CJK → sans-serif
+    if (node.fontFamily) s.push(`font-family: '${node.fontFamily}', 'Inter', 'Noto Naskh Arabic', 'Noto Sans KR', 'Noto Sans SC', 'Noto Sans JP', sans-serif`);
     if (node.fontWeight) s.push(`font-weight: ${node.fontWeight}`);
     if (node.lineHeight) {
       // open-pencil: lineHeight < 5 is a multiplier, otherwise absolute px
@@ -419,8 +420,13 @@ function renderNode(node: PenNode, variables: Record<string, PenVariable>, isRoo
       return `<span ${dataAttrs} class="material-icons" style="${style}">${node.iconFontName}</span>`;
     }
 
-    // Lucide icons (SVG-based)
-    return `<i ${dataAttrs} data-lucide="${node.iconFontName}" style="${style}"></i>`;
+    // Lucide icons (SVG via data-lucide attribute)
+    if (family === "lucide") {
+      return `<i ${dataAttrs} data-lucide="${node.iconFontName}" style="${style}"></i>`;
+    }
+
+    // All other icon sets → Iconify (supports mdi, heroicons, tabler, solar, mingcute, ri, etc.)
+    return `<span ${dataAttrs} class="iconify" data-icon="${family}:${node.iconFontName}" style="${style}"></span>`;
   }
 
   // Ellipse → div with border-radius: 50%
@@ -500,7 +506,10 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
   const customFontLinks: string[] = [];
   const googleFontsList: string[] = [];
 
-  // Always load CJK fallback fonts (matching open-pencil's fallback chain)
+  // Always load fallback fonts (matching open-pencil's fallback chain)
+  // Arabic
+  googleFontsList.push("Noto Naskh Arabic");
+  // CJK (Korean, Chinese, Japanese)
   googleFontsList.push("Noto Sans KR");
   googleFontsList.push("Noto Sans SC");
   googleFontsList.push("Noto Sans JP");
@@ -539,25 +548,42 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
   const iconHeadLinks: string[] = [];
   // Icon scripts (placed at end of body for immediate execution)
   const iconBodyScripts: string[] = [];
+
+  // Material Symbols variants (Google Fonts)
+  const materialSymbolsVariants = ["Rounded", "Outlined", "Sharp"];
+  for (const variant of materialSymbolsVariants) {
+    const key = `Material Symbols ${variant}`;
+    const keyLower = key.toLowerCase().replace(/\s+/g, "-");
+    if (iconFontFamilies.has(key) || iconFontFamilies.has(keyLower)) {
+      const urlFamily = `Material+Symbols+${variant}`;
+      iconHeadLinks.push(
+        `<link href="https://fonts.googleapis.com/css2?family=${urlFamily}:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">`
+      );
+    }
+  }
+
+  // Material Icons (legacy)
+  if (iconFontFamilies.has("material") || iconFontFamilies.has("material-icons") || iconFontFamilies.has("Material Icons")) {
+    iconHeadLinks.push(
+      `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
+    );
+  }
+
+  // Lucide icons (SVG-based via JS)
   if (iconFontFamilies.has("lucide")) {
     iconBodyScripts.push(
       `<script src="https://unpkg.com/lucide@0.474.0/dist/umd/lucide.min.js"></script>`,
       `<script>lucide.createIcons();</script>`
     );
   }
-  if (iconFontFamilies.has("material") || iconFontFamilies.has("material-icons")) {
-    iconHeadLinks.push(
-      `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
-    );
-  }
-  if (iconFontFamilies.has("Material Symbols Rounded") || iconFontFamilies.has("material-symbols-rounded")) {
-    iconHeadLinks.push(
-      `<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">`
-    );
-  }
-  if (iconFontFamilies.has("Material Symbols Outlined") || iconFontFamilies.has("material-symbols-outlined")) {
-    iconHeadLinks.push(
-      `<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">`
+
+  // Iconify (universal icon framework — supports mdi, heroicons, tabler, solar, mingcute, ri, etc.)
+  const iconifyFamilies = [...iconFontFamilies].filter(f =>
+    !f.startsWith("Material") && f !== "material" && f !== "material-icons" && f !== "lucide"
+  );
+  if (iconifyFamilies.length > 0) {
+    iconBodyScripts.push(
+      `<script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>`
     );
   }
 
@@ -588,6 +614,11 @@ ${iconHeadLinks.join("\n")}
     align-items: center;
     justify-content: center;
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .iconify {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
 ${highlightCss}
