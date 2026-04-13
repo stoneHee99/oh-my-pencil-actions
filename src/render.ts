@@ -32,9 +32,15 @@ export async function screenshotNodes(
 
   await page.setContent(html, { waitUntil: "networkidle" });
 
-  // Wait for Google Fonts to load
+  // Wait for fonts + icons to load
   await page.evaluate(() =>
-    document.fonts.ready.then(() => new Promise((r) => setTimeout(r, 500)))
+    document.fonts.ready.then(() => {
+      // Trigger Lucide icon rendering if available
+      if (typeof (window as unknown as Record<string, unknown>).lucide !== "undefined") {
+        (window as unknown as Record<string, { createIcons: () => void }>).lucide.createIcons();
+      }
+      return new Promise((r) => setTimeout(r, 1000));
+    })
   );
 
   const results: ScreenshotResult[] = [];
@@ -70,7 +76,12 @@ export async function screenshotFullPage(
   });
   await page.setContent(html, { waitUntil: "networkidle" });
   await page.evaluate(() =>
-    document.fonts.ready.then(() => new Promise((r) => setTimeout(r, 500)))
+    document.fonts.ready.then(() => {
+      if (typeof (window as unknown as Record<string, unknown>).lucide !== "undefined") {
+        (window as unknown as Record<string, { createIcons: () => void }>).lucide.createIcons();
+      }
+      return new Promise((r) => setTimeout(r, 1000));
+    })
   );
   await page.screenshot({ path: outputPath, fullPage: true });
   await browser.close();

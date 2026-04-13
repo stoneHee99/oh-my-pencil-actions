@@ -516,16 +516,18 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
     pageHeight = Math.max(pageHeight, cy + ch);
   }
 
-  // Icon font libraries
-  const iconScripts: string[] = [];
+  // Icon font libraries (head links)
+  const iconHeadLinks: string[] = [];
+  // Icon scripts (placed at end of body for immediate execution)
+  const iconBodyScripts: string[] = [];
   if (iconFontFamilies.has("lucide")) {
-    iconScripts.push(
-      `<script src="https://unpkg.com/lucide@latest"></script>`,
-      `<script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>`
+    iconBodyScripts.push(
+      `<script src="https://unpkg.com/lucide@0.474.0/dist/umd/lucide.min.js"></script>`,
+      `<script>lucide.createIcons();</script>`
     );
   }
   if (iconFontFamilies.has("material") || iconFontFamilies.has("material-icons")) {
-    iconScripts.push(
+    iconHeadLinks.push(
       `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
     );
   }
@@ -536,7 +538,7 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
 <meta charset="utf-8">
 ${googleFontsLink}
 ${customFontLinks.join("\n")}
-${iconScripts.join("\n")}
+${iconHeadLinks.join("\n")}
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -557,6 +559,7 @@ ${highlightCss}
 </head>
 <body>
 ${bodyHtml}
+${iconBodyScripts.join("\n")}
 </body>
 </html>`;
 }
