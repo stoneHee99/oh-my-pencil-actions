@@ -246,6 +246,18 @@ async function main() {
   await writeFile(reportPath, markdown);
   console.log(`Report saved: ${reportPath}`);
 
+  // Write overview image list (top-level node screenshots only)
+  const overviewImages: string[] = [];
+  for (const topId of topLevelIds) {
+    const beforeImg = screenshots.get(`before-${topId}`);
+    const afterImg = screenshots.get(`after-${topId}`);
+    if (beforeImg) overviewImages.push(beforeImg);
+    if (afterImg) overviewImages.push(afterImg);
+  }
+  const overviewPath = join(outputDir, "overview-images.txt");
+  await writeFile(overviewPath, overviewImages.join("\n"));
+  console.log(`Overview images: ${overviewImages.length} files`);
+
   // Also write to stdout for GitHub Actions
   console.log("\n--- REPORT ---\n");
   console.log(markdown);
