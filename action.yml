@@ -125,9 +125,11 @@ runs:
           BASE_FILE="/tmp/pen-base/$(basename "$pen_file")"
           git show "$BASE_SHA:$pen_file" > "$BASE_FILE" 2>/dev/null || echo '{"version":"0","children":[]}' > "$BASE_FILE"
 
-          # Generate before/after screenshots
-          SUBDIR="$OUTPUT_DIR/$(basename "$pen_file" .pen)"
-          echo "Output subdir: $SUBDIR"
+          # Generate before/after screenshots (sanitize subdir name to ASCII)
+          RAW_NAME=$(basename "$pen_file" .pen)
+          SAFE_DIR=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9._-]/_/g')
+          SUBDIR="$OUTPUT_DIR/$SAFE_DIR"
+          echo "Output subdir: $SUBDIR (from: $RAW_NAME)"
           node "$ACTION_PATH/dist/main.js" "$BASE_FILE" "$pen_file" --output-dir "$SUBDIR"
           echo "Generated files:"
           ls -la "$SUBDIR"/ 2>/dev/null || echo "  (no files)"
