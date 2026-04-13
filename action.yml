@@ -170,7 +170,7 @@ runs:
         for listfile in "$OUTPUT_DIR"/*/overview-images.txt; do
           [ -f "$listfile" ] || continue
           echo "Found: $listfile"
-          while IFS= read -r img_path; do
+          while IFS= read -r img_path || [ -n "$img_path" ]; do
             [ -z "$img_path" ] && continue
             echo "  Image: $img_path (exists: $([ -f "$img_path" ] && echo yes || echo no))"
             [ -f "$img_path" ] || continue

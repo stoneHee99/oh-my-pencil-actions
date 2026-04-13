@@ -255,7 +255,7 @@ async function main() {
     if (afterImg) overviewImages.push(afterImg);
   }
   const overviewPath = join(outputDir, "overview-images.txt");
-  await writeFile(overviewPath, overviewImages.join("\n"));
+  await writeFile(overviewPath, overviewImages.join("\n") + "\n");
   console.log(`Overview images: ${overviewImages.length} files`);
 
   // Also write to stdout for GitHub Actions
