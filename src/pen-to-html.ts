@@ -471,11 +471,31 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
   }
   doc.children.forEach(collectFonts);
 
-  // Build Google Fonts URL
-  const googleFontFamilies = [...fonts]
+  // Fonts that are NOT on Google Fonts — load from alternative CDNs
+  const CUSTOM_FONT_CDN: Record<string, string> = {
+    "Geist": "https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.css",
+    "Geist Mono": "https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.css",
+    "Geist Sans": "https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.css",
+    "Pretendard": "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css",
+    "Pretendard Variable": "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css",
+  };
+
+  const customFontLinks: string[] = [];
+  const googleFontsList: string[] = [];
+
+  for (const f of fonts) {
+    if (CUSTOM_FONT_CDN[f]) {
+      customFontLinks.push(`<link href="${CUSTOM_FONT_CDN[f]}" rel="stylesheet">`);
+    } else {
+      googleFontsList.push(f);
+    }
+  }
+
+  // Build Google Fonts URL (only for fonts not handled by custom CDN)
+  const googleFontFamilies = googleFontsList
     .map((f) => `family=${encodeURIComponent(f)}:wght@100;200;300;400;500;600;700;800;900`)
     .join("&");
-  const googleFontsLink = fonts.size > 0
+  const googleFontsLink = googleFontsList.length > 0
     ? `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?${googleFontFamilies}&display=swap" rel="stylesheet">`
@@ -512,6 +532,7 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
 <head>
 <meta charset="utf-8">
 ${googleFontsLink}
+${customFontLinks.join("\n")}
 ${iconScripts.join("\n")}
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
