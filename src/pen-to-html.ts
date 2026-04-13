@@ -336,7 +336,7 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
   // Text properties
   if (node.type === "text") {
     if (node.fontSize) s.push(`font-size: ${node.fontSize}px`);
-    if (node.fontFamily) s.push(`font-family: '${node.fontFamily}', 'Pretendard', 'Noto Sans KR', sans-serif`);
+    if (node.fontFamily) s.push(`font-family: '${node.fontFamily}', 'Inter', 'Noto Sans KR', 'Noto Sans SC', 'Noto Sans JP', sans-serif`);
     if (node.fontWeight) s.push(`font-weight: ${node.fontWeight}`);
     if (node.lineHeight) {
       // open-pencil: lineHeight < 5 is a multiplier, otherwise absolute px
@@ -500,10 +500,10 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
   const customFontLinks: string[] = [];
   const googleFontsList: string[] = [];
 
-  // Always load Pretendard as Korean fallback font
-  customFontLinks.push(`<link href="${CUSTOM_FONT_CDN["Pretendard"]}" rel="stylesheet">`);
-  // Always load Noto Sans KR as additional Korean fallback
+  // Always load CJK fallback fonts (matching open-pencil's fallback chain)
   googleFontsList.push("Noto Sans KR");
+  googleFontsList.push("Noto Sans SC");
+  googleFontsList.push("Noto Sans JP");
 
   for (const f of fonts) {
     if (CUSTOM_FONT_CDN[f]) {
