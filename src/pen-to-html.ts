@@ -404,8 +404,22 @@ function renderNode(node: PenNode, variables: Record<string, PenVariable>, isRoo
     return `<span ${dataAttrs} style="${style}">${content}</span>`;
   }
 
-  // Icon font → render as Lucide/icon font character
+  // Icon font → render based on icon font family
   if (node.type === "icon_font" && node.iconFontName) {
+    const family = node.iconFontFamily ?? "";
+
+    // Material Symbols (Rounded, Outlined, Sharp)
+    if (family.startsWith("Material Symbols")) {
+      const cssClass = family.toLowerCase().replace(/\s+/g, "-");
+      return `<span ${dataAttrs} class="${cssClass}" style="${style}">${node.iconFontName}</span>`;
+    }
+
+    // Material Icons (legacy)
+    if (family === "material" || family === "material-icons" || family === "Material Icons") {
+      return `<span ${dataAttrs} class="material-icons" style="${style}">${node.iconFontName}</span>`;
+    }
+
+    // Lucide icons (SVG-based)
     return `<i ${dataAttrs} data-lucide="${node.iconFontName}" style="${style}"></i>`;
   }
 
@@ -536,6 +550,16 @@ export function penToHtml(doc: PenDocument, options?: { highlightIds?: Set<strin
       `<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">`
     );
   }
+  if (iconFontFamilies.has("Material Symbols Rounded") || iconFontFamilies.has("material-symbols-rounded")) {
+    iconHeadLinks.push(
+      `<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">`
+    );
+  }
+  if (iconFontFamilies.has("Material Symbols Outlined") || iconFontFamilies.has("material-symbols-outlined")) {
+    iconHeadLinks.push(
+      `<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">`
+    );
+  }
 
   return `<!DOCTYPE html>
 <html>
@@ -558,6 +582,12 @@ ${iconHeadLinks.join("\n")}
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+  .material-symbols-rounded, .material-symbols-outlined, .material-symbols-sharp, .material-icons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
 </style>
 ${highlightCss}
