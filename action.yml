@@ -139,7 +139,7 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.output-dir }}/
 
-    - name: Upload screenshots to release
+    - name: Upload overview screenshots to release
       if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
       id: upload
       shell: bash
@@ -153,25 +153,39 @@ runs:
         URL_MAP="/tmp/image-urls.txt"
         > "$URL_MAP"
 
-        # Rename all PNGs and build URL map
-        find "$OUTPUT_DIR" -name '*.png' | while read -r png; do
-          BASENAME=$(basename "$png")
-          SUBDIR=$(basename "$(dirname "$png")")
-          ASSET_NAME="${SUBDIR}--${BASENAME}"
-          cp "$png" "$TMPDIR/$ASSET_NAME"
-          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ASSET_NAME}"
-          echo "${png}=${URL}" >> "$URL_MAP"
+        # Only upload overview images (top-level before/after) to avoid rate limits
+        # Overview node IDs are listed in report.md under "(Overview)" sections
+        OVERVIEW_COUNT=0
+        for dir in "$OUTPUT_DIR"/*/; do
+          [ -d "$dir" ] || continue
+          SUBDIR=$(basename "$dir")
+          REPORT="$dir/report.md"
+          [ -f "$REPORT" ] || continue
+
+          # Extract image filenames referenced in Overview sections
+          grep -A2 '(Overview)' "$REPORT" | grep -oP '(?<=\()([^)]+\.png)' | while read -r img_path; do
+            BASENAME=$(basename "$img_path")
+            [ -f "$dir/$BASENAME" ] || continue
+
+            # Sanitize filename to ASCII
+            SAFE_NAME=$(echo "${SUBDIR}--${BASENAME}" | sed 's/[^a-zA-Z0-9._-]/_/g')
+            cp "$dir/$BASENAME" "$TMPDIR/$SAFE_NAME"
+
+            echo "${img_path}=${SAFE_NAME}" >> "$URL_MAP"
+            OVERVIEW_COUNT=$((OVERVIEW_COUNT + 1))
+          done
         done
 
-        # Create release with all files in one call
-        gh release create "$TAG" "$TMPDIR"/*.png \
-          --repo "${{ github.repository }}" \
-          --title "Preview: run ${RUN_ID}" \
-          --notes "Auto-generated screenshots for PR #${{ github.event.pull_request.number }}. Safe to delete." \
-          --prerelease
+        if [ -s "$URL_MAP" ]; then
+          gh release create "$TAG" "$TMPDIR"/*.png \
+            --repo "${{ github.repository }}" \
+            --title "Preview: run ${RUN_ID}" \
+            --notes "Auto-generated overview screenshots for PR #${{ github.event.pull_request.number }}. Safe to delete." \
+            --prerelease
+        fi
 
+        echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
         echo "url_map=${URL_MAP}" >> "$GITHUB_OUTPUT"
-        echo "release_tag=${TAG}" >> "$GITHUB_OUTPUT"
 
     - name: Post PR comment
       if: steps.detect.outputs.has_changes == 'true' && inputs.comment == 'true'
@@ -182,15 +196,22 @@ runs:
           const path = require('path');
           const outputDir = '${{ inputs.output-dir }}';
           const urlMapPath = '${{ steps.upload.outputs.url_map }}';
+          const tag = '${{ steps.upload.outputs.tag }}';
+          const repo = '${{ github.repository }}';
 
-          // Parse URL map: local_path=url
+          // Parse URL map: local_img_path=safe_asset_name
           const imageUrls = new Map();
           if (fs.existsSync(urlMapPath)) {
-            const lines = fs.readFileSync(urlMapPath, 'utf-8').trim().split('\n');
-            for (const line of lines) {
-              const eqIdx = line.indexOf('=');
-              if (eqIdx > 0) {
-                imageUrls.set(line.slice(0, eqIdx), line.slice(eqIdx + 1));
+            const content = fs.readFileSync(urlMapPath, 'utf-8').trim();
+            if (content) {
+              for (const line of content.split('\n')) {
+                const eqIdx = line.indexOf('=');
+                if (eqIdx > 0) {
+                  const localPath = line.slice(0, eqIdx);
+                  const assetName = line.slice(eqIdx + 1);
+                  const url = `https://github.com/${repo}/releases/download/${tag}/${assetName}`;
+                  imageUrls.set(localPath, url);
+                }
               }
             }
           }
@@ -204,15 +225,22 @@ runs:
             const reportPath = path.join(outputDir, dir.name, 'report.md');
             if (fs.existsSync(reportPath)) {
               let report = fs.readFileSync(reportPath, 'utf-8');
-              // Replace local paths with release asset URLs
+
+              // Replace local image paths with release URLs for overview images
+              // For non-overview images (not uploaded), remove the image markdown
               report = report.replace(
                 /!\[([^\]]*)\]\(([^)]+\.png)\)/g,
                 (match, alt, localPath) => {
                   const url = imageUrls.get(localPath);
                   if (url) return `![${alt}](${url})`;
-                  return match;
+                  // Remove non-overview images (keep text report only)
+                  return '';
                 }
               );
+
+              // Clean up empty table rows left after removing images
+              report = report.replace(/\| Before \| After \|\n\|--------\|-------\|\n\|  \|  \|/g, '');
+
               body += report + '\n\n---\n\n';
             }
           }
