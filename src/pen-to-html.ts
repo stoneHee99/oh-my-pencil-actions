@@ -371,13 +371,18 @@ function buildStyle(node: PenNode, variables: Record<string, PenVariable>, isRoo
     }
   }
 
-  // Icon font — apply fill as color
+  // Icon font — apply fill as color + size as font-size
   if (node.type === "icon_font") {
     const iconColor = resolveColor(node.fill, variables);
     if (iconColor) {
       const bgIdx = s.findIndex((x) => x.startsWith("background-color:"));
       if (bgIdx >= 0) s.splice(bgIdx, 1);
       s.push(`color: ${iconColor}`);
+    }
+    // Icon size = font-size (use width, fallback to height)
+    const iconSize = typeof node.width === "number" ? node.width : typeof node.height === "number" ? node.height : undefined;
+    if (iconSize) {
+      s.push(`font-size: ${iconSize}px`);
     }
   }
 
