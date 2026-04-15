@@ -213,7 +213,7 @@
                       "x": 0,
                       "y": 0,
                       "name": "avatar1",
-                      "fill": "#E8D5F5",
+                      "fill": "#3D2A4D",
                       "width": 52,
                       "height": 52
                     },
@@ -223,7 +223,7 @@
                       "x": 12,
                       "y": 14,
                       "name": "avatar1letter",
-                      "fill": "#7B2CBF",
+                      "fill": "#C490E8",
                       "content": "SC",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -368,7 +368,7 @@
                       "x": 0,
                       "y": 0,
                       "name": "av2",
-                      "fill": "#D5E8F5",
+                      "fill": "#1E3348",
                       "width": 52,
                       "height": 52
                     },
@@ -378,7 +378,7 @@
                       "x": 12,
                       "y": 14,
                       "name": "av2l",
-                      "fill": "#2B6CB0",
+                      "fill": "#6AAAE6",
                       "content": "AK",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -508,7 +508,7 @@
                       "x": 0,
                       "y": 0,
                       "name": "av3",
-                      "fill": "#F5E6D5",
+                      "fill": "#3D2E1E",
                       "width": 52,
                       "height": 52
                     },
@@ -518,7 +518,7 @@
                       "x": 18,
                       "y": 13,
                       "name": "av3l",
-                      "fill": "#C05621",
+                      "fill": "#E89060",
                       "content": "M",
                       "fontFamily": "Inter",
                       "fontSize": 20,
@@ -627,7 +627,7 @@
                       "x": 0,
                       "y": 0,
                       "name": "av4",
-                      "fill": "#D5F5E3",
+                      "fill": "#1E3D28",
                       "width": 52,
                       "height": 52
                     },
@@ -637,7 +637,7 @@
                       "x": 12,
                       "y": 14,
                       "name": "av4l",
-                      "fill": "#276749",
+                      "fill": "#5CC490",
                       "content": "DT",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -767,7 +767,7 @@
                       "x": 0,
                       "y": 0,
                       "name": "av5",
-                      "fill": "#F5D5D5",
+                      "fill": "#3D1E1E",
                       "width": 52,
                       "height": 52
                     },
@@ -777,7 +777,7 @@
                       "x": 12,
                       "y": 14,
                       "name": "av5l",
-                      "fill": "#C53030",
+                      "fill": "#E87070",
                       "content": "JP",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -871,7 +871,7 @@
                       "x": 0,
                       "y": 0,
                       "name": "av6",
-                      "fill": "#F5F0D5",
+                      "fill": "#3D3A1E",
                       "width": 52,
                       "height": 52
                     },
@@ -881,7 +881,7 @@
                       "x": 10,
                       "y": 14,
                       "name": "av6l",
-                      "fill": "#975A16",
+                      "fill": "#D4A050",
                       "content": "EW",
                       "fontFamily": "Inter",
                       "fontSize": 18,
@@ -2749,19 +2749,19 @@
   "variables": {
     "bg-accent": {
       "type": "color",
-      "value": "#4A90D9"
+      "value": "#5B9EE6"
     },
     "bg-accent-light": {
       "type": "color",
-      "value": "#E8F0FE"
+      "value": "#1A2D45"
     },
     "bg-bubble-received": {
       "type": "color",
-      "value": "#F0F0F0"
+      "value": "#2A2A2A"
     },
     "bg-bubble-sent": {
       "type": "color",
-      "value": "#4A90D9"
+      "value": "#5B9EE6"
     },
     "bg-online": {
       "type": "color",
@@ -2769,23 +2769,23 @@
     },
     "bg-primary": {
       "type": "color",
-      "value": "#FFFFFF"
+      "value": "#121212"
     },
     "bg-secondary": {
       "type": "color",
-      "value": "#F5F5F5"
+      "value": "#1E1E1E"
     },
     "bg-tab-bar": {
       "type": "color",
-      "value": "#FFFFFF"
+      "value": "#121212"
     },
     "bg-tertiary": {
       "type": "color",
-      "value": "#EBEBEB"
+      "value": "#2A2A2A"
     },
     "border-light": {
       "type": "color",
-      "value": "#E5E5EA"
+      "value": "#2C2C2E"
     },
     "radius-full": {
       "type": "number",
@@ -2805,7 +2805,7 @@
     },
     "shadow-color": {
       "type": "color",
-      "value": "#0000000F"
+      "value": "#00000033"
     },
     "spacing-lg": {
       "type": "number",
@@ -2821,7 +2821,7 @@
     },
     "text-accent": {
       "type": "color",
-      "value": "#4A90D9"
+      "value": "#5B9EE6"
     },
     "text-inverse": {
       "type": "color",
@@ -2829,15 +2829,15 @@
     },
     "text-muted": {
       "type": "color",
-      "value": "#AEAEB2"
+      "value": "#636366"
     },
     "text-primary": {
       "type": "color",
-      "value": "#1A1A1A"
+      "value": "#F0F0F0"
     },
     "text-secondary": {
       "type": "color",
-      "value": "#8E8E93"
+      "value": "#9E9EA3"
     }
   }
 }
